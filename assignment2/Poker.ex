@@ -2,17 +2,33 @@ defmodule Poker do
   def deal(), do: deal(shuffle())
 
   def deal(list) do
-    if (length(list) >= 10) do
+    if length(list) >= 10 do
       list = Enum.drop(list, -(length(list) - 10))
+
+      IO.inspect(list)
 
       {hand1, hand2} = createHands(list, 1, [], [])
 
-      # evaluate(hand1)
-      # evaluate(hand2)
+      hand1 = Enum.sort(hand1)
+      hand2 = Enum.sort(hand2)
+
+      IO.inspect(hand1)
+      IO.inspect(hand2)
+
+      hand1 = assignSuit(hand1, [])
+      hand2 = assignSuit(hand2, [])
+
+      IO.inspect(hand1)
+      IO.inspect(hand2)
+
+      value1 = evaluate(hand1)
+      value2 = evaluate(hand2)
     else
       IO.puts("Not enough cards")
     end
   end
+
+  # ******************************************
 
   def shuffle(), do: shuffle(Enum.to_list(1..52))
 
@@ -21,9 +37,12 @@ defmodule Poker do
     list = Enum.drop(list, -(length(list) - 10))
   end
 
+  # ******************************************
+
   def createHands([], n, hand1, hand2), do: {hand1, hand2}
+
   def createHands(list, n, hand1, hand2) do
-    if (rem(n, 2) == 1) do
+    if rem(n, 2) == 1 do
       hand1 = hand1 ++ [hd(list)]
       createHands(tl(list), n + 1, hand1, hand2)
     else
@@ -34,52 +53,89 @@ defmodule Poker do
 
   # ******************************************
 
-  def evaluate(hand) do
-    value = [
-      highCard:       highCard(hand),
-      pair:           pair(hand),
-      twoPair:        twoPair(hand),
-      triplet:        triplet(hand),
-      straight:       straight(hand),
-      flush:          flush(hand),
-      fullHouse:      fullHouse(hand),
-      quadruplet:     quadruplet(hand),
-      straightFlush:  straightFlush(hand),
-      royalFlush:     royalFlush(hand),
-    ]
+  def assignSuit([], suit), do: suit
+
+  def assignSuit(hand, suit) do
+    suit = suit ++ getSuit(hd(hand))
+    assignSuit(tl(hand), suit)
   end
 
-  def sort(hand) do
+  def getSuit(value) do
+    card = rem(value - 1, 13)
+    value = div(value - 1, 13)
+
+    cond do
+      value == 0 -> [clubs: card + 1]
+      value == 1 -> [diamonds: card + 1]
+      value == 2 -> [hearts: card + 1]
+      value == 3 -> [spades: card + 1]
+    end
+  end
+
+  # ******************************************
+
+  def evaluate(hand) do
+    value = [
+      highCard: highCard(hand),
+      pair: pair(hand),
+      twoPair: twoPair(hand),
+      triplet: triplet(hand),
+      straight: straight(hand),
+      flush: flush(hand),
+      fullHouse: fullHouse(hand),
+      quadruplet: quadruplet(hand),
+      straightFlush: straightFlush(hand),
+      royalFlush: royalFlush(hand)
+    ]
   end
 
   # ******************************************
 
   def highCard(hand) do
+    true
   end
+
+  # ******************************************
 
   def pair(hand) do
   end
 
+  # ******************************************
+
   def twoPair(hand) do
   end
+
+  # ******************************************
 
   def triplet(hand) do
   end
 
+  # ******************************************
+
   def straight(hand) do
   end
 
+  # ******************************************
+  # Keyword.take(keywords, keys)
   def flush(hand) do
   end
+
+  # ******************************************
 
   def fullHouse(hand) do
   end
 
+  # ******************************************
+
   def quadruplet(hand) do
   end
 
+  # ******************************************
+
   def straightFlush(hand) do
   end
+
+  # ******************************************
 
   def royalFlush(hand) do
   end
