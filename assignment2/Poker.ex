@@ -3,11 +3,10 @@ defmodule Poker do
 
   def deal(list) do
     if (length(list) >= 10) do
-      list = shuffle(list)
-      hand1 = draw5(list)
-      hand2 = draw5(list)
-      IO.inspect(hand1)
-      IO.inspect(hand2)
+      list = Enum.drop(list, -(length(list) - 10))
+
+      {hand1, hand2} = createHands(list, 1, [], [])
+
       # evaluate(hand1)
       # evaluate(hand2)
     else
@@ -19,10 +18,18 @@ defmodule Poker do
 
   def shuffle(list) do
     list = Enum.shuffle(list)
+    list = Enum.drop(list, -(length(list) - 10))
   end
 
-  def draw5(list) do
-    Enum.take_random(list, 5)
+  def createHands([], n, hand1, hand2), do: {hand1, hand2}
+  def createHands(list, n, hand1, hand2) do
+    if (rem(n, 2) == 1) do
+      hand1 = hand1 ++ [hd(list)]
+      createHands(tl(list), n + 1, hand1, hand2)
+    else
+      hand2 = hand2 ++ [hd(list)]
+      createHands(tl(list), n + 1, hand1, hand2)
+    end
   end
 
   # ******************************************
