@@ -15,11 +15,26 @@ defmodule Poker do
       IO.inspect(hand1)
       IO.inspect(hand2)
 
-      hand1 = assignSuit(hand1, [])
-      hand2 = assignSuit(hand2, [])
+      suit1 = assignSuit(hand1, [])
+      suit2 = assignSuit(hand2, [])
 
+      {suitKeys1, cardKeys1} = keywordList(hand1, [], [])
+      {suitKeys2, cardKeys2} = keywordList(hand2, [], [])
+
+      hand1 = assignCard(hand1, [])
+      hand2 = assignCard(hand2, [])
+
+      IO.puts("*******************************")
       IO.inspect(hand1)
+      IO.inspect(suit1)
+      IO.inspect(suitKeys1)
+      IO.inspect(cardKeys1)
+      IO.puts("*******************************")
       IO.inspect(hand2)
+      IO.inspect(suit2)
+      IO.inspect(suitKeys2)
+      IO.inspect(cardKeys2)
+      IO.puts("*******************************")
 
       value1 = evaluate(hand1)
       value2 = evaluate(hand2)
@@ -34,7 +49,6 @@ defmodule Poker do
 
   def shuffle(list) do
     list = Enum.shuffle(list)
-    list = Enum.drop(list, -(length(list) - 10))
   end
 
   # ******************************************
@@ -56,19 +70,68 @@ defmodule Poker do
   def assignSuit([], suit), do: suit
 
   def assignSuit(hand, suit) do
-    suit = suit ++ getSuit(hd(hand))
+    suit = suit ++ [getSuit(hd(hand))]
     assignSuit(tl(hand), suit)
   end
 
   def getSuit(value) do
-    card = rem(value - 1, 13)
     value = div(value - 1, 13)
 
     cond do
-      value == 0 -> [clubs: card + 1]
-      value == 1 -> [diamonds: card + 1]
-      value == 2 -> [hearts: card + 1]
-      value == 3 -> [spades: card + 1]
+      value == 0 -> "clubs"
+      value == 1 -> "diamonds"
+      value == 2 -> "hearts"
+      value == 3 -> "spades"
+    end
+  end
+
+  # ******************************************
+
+  def assignCard([], cards), do: cards
+
+  def assignCard(hand, cards) do
+    cards = cards ++ [getCard(hd(hand))]
+    assignCard(tl(hand), cards)
+  end
+
+  def getCard(value), do: rem(value - 1, 13) + 1
+
+  # ******************************************
+
+  def keywordList([], suitKeys, cardKeys), do: {suitKeys, cardKeys}
+
+  def keywordList(hand, suitKeys, cardKeys) do
+    suitKeys = suitKeys ++ getSuitPair(hd(hand))
+    cardKeys = cardKeys ++ getCardPair(hd(hand))
+    keywordList(tl(hand), suitKeys, cardKeys)
+  end
+
+  def getSuitPair(value) do
+    suit = getSuit(value)
+    cond do
+      suit == "clubs" -> [clubs: getCard(value)]
+      suit == "diamonds" -> [diamonds: getCard(value)]
+      suit == "hearts" -> [hearts: getCard(value)]
+      suit == "spades" -> [spades: getCard(value)]
+    end
+  end
+
+  def getCardPair(value) do
+    card = getCard(value)
+    cond do
+      card == 1 -> ['1': getSuit(value)]
+      card == 2 -> ['2': getSuit(value)]
+      card == 3 -> ['3': getSuit(value)]
+      card == 4 -> ['4': getSuit(value)]
+      card == 5 -> ['5': getSuit(value)]
+      card == 6 -> ['6': getSuit(value)]
+      card == 7 -> ['7': getSuit(value)]
+      card == 8 -> ['8': getSuit(value)]
+      card == 9 -> ['9': getSuit(value)]
+      card == 10 -> ['10': getSuit(value)]
+      card == 11 -> ['11': getSuit(value)]
+      card == 12 -> ['12': getSuit(value)]
+      card == 13 -> ['13': getSuit(value)]
     end
   end
 
