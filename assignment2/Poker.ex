@@ -35,9 +35,9 @@ defmodule Poker do
         cardKeys: cardKeys2
       ]
 
-      IO.inspect(list, charlists: :as_lists)
-      IO.inspect(data1, charlists: :as_lists)
-      IO.inspect(data2, charlists: :as_lists)
+      # IO.inspect(list, charlists: :as_lists)
+      # IO.inspect(data1, charlists: :as_lists)
+      # IO.inspect(data2, charlists: :as_lists)
       value = evaluate(data1, data2)
       # nil
     else
@@ -162,7 +162,7 @@ defmodule Poker do
 
   def evaluate(data1, data2) do
     value = [
-      highCard: highCard(data1, data2),
+      highCard: highCard(data1, data2, 999, 0),
       pair: pair(data1, data2),
       twoPair: twoPair(data1, data2),
       triplet: triplet(data1, data2),
@@ -177,18 +177,33 @@ defmodule Poker do
 
   # ******************************************
 
-  def highCard(data1, data2) do
-    {value1, suit1} = highCard(data1[:raw], 0, "")
-    {value2, suit2} = highCard(data2[:raw], 0, "")
+  def highCard(data1, data2, max, count) do
+    {value1, suit1, max1} = getHighCard(data1[:raw], max, 0)
+    {value2, suit2, max2} = getHighCard(data2[:raw], max, 0)
+
+    cond do
+      data1[:hand] === data2[:hand] && count > 5 -> "TIE"
+      value1 == value2 -> highCard(data1, data2, max(max1, max2), count + 1)
+      value1 > value2 -> [data1[:hand], "hand1"]
+      value1 < value2 -> [data2[:hand], "hand2"]
+    end
   end
 
-  def highCard([], cardValue, suit), do: {getCard(cardValue), getSuit(cardValue)}
+  def getHighCard([], max, target) do
+    cond do
+      getCard(target) == 1 -> {14, getSuit(target), max}
+      true -> {getCard(target), getSuit(target), max}
+    end
+  end
 
-  def highCard(hand, cardValue, suit) do
-    if (hd(hand) > cardValue) do
-      highCard(tl(hand), hd(hand), suit)
-    else
-      highCard(tl(hand), cardValue, suit)
+  def getHighCard(hand, max, target) do
+    card = getCard(hd(hand))
+
+    cond do
+      card == 1 && max > 14 -> getHighCard(tl(hand), max, 14)
+      card > target && card < max -> getHighCard(tl(hand), max, hd(hand))
+      card < target && card < max -> getHighCard(tl(hand), max, target)
+      true -> getHighCard(tl(hand), max, target)
     end
   end
 
@@ -199,6 +214,12 @@ defmodule Poker do
     # [spades: 4, spades: 8]
     # iex(2)> length(Keyword.take([clubs: 3, clubs: 10, diamonds: 3, spades: 4, spades: 8], [:spades]))
     # 2
+    hand1 = data1[:hand]
+    hand2 = data2[:hand]
+
+    cond do
+      Keyword.take(hand1)
+    end
   end
 
   # ******************************************
