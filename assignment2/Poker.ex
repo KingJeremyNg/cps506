@@ -5,39 +5,41 @@ defmodule Poker do
     if length(list) >= 10 do
       list = Enum.drop(list, -(length(list) - 10))
 
-      IO.inspect(list)
+      {raw1, raw2} = createHands(list, 1, [], [])
 
-      {hand1, hand2} = createHands(list, 1, [], [])
+      raw1 = Enum.sort(raw1)
+      raw2 = Enum.sort(raw2)
 
-      hand1 = Enum.sort(hand1)
-      hand2 = Enum.sort(hand2)
+      suit1 = assignSuit(raw1, [])
+      suit2 = assignSuit(raw2, [])
 
-      IO.inspect(hand1)
-      IO.inspect(hand2)
+      {suitKeys1, cardKeys1} = keywordList(raw1, [], [])
+      {suitKeys2, cardKeys2} = keywordList(raw2, [], [])
 
-      suit1 = assignSuit(hand1, [])
-      suit2 = assignSuit(hand2, [])
+      hand1 = assignCard(raw1, [])
+      hand2 = assignCard(raw2, [])
 
-      {suitKeys1, cardKeys1} = keywordList(hand1, [], [])
-      {suitKeys2, cardKeys2} = keywordList(hand2, [], [])
+      data1 = [
+        raw: raw1,
+        hand: hand1,
+        suit: suit1,
+        suitKeys: suitKeys1,
+        cardKeys: cardKeys1
+      ]
 
-      hand1 = assignCard(hand1, [])
-      hand2 = assignCard(hand2, [])
+      data2 = [
+        raw: raw2,
+        hand: hand2,
+        suit: suit2,
+        suitKeys: suitKeys2,
+        cardKeys: cardKeys2
+      ]
 
-      IO.puts("*******************************")
-      IO.inspect(hand1)
-      IO.inspect(suit1)
-      IO.inspect(suitKeys1)
-      IO.inspect(cardKeys1)
-      IO.puts("*******************************")
-      IO.inspect(hand2)
-      IO.inspect(suit2)
-      IO.inspect(suitKeys2)
-      IO.inspect(cardKeys2)
-      IO.puts("*******************************")
-
-      value1 = evaluate(hand1)
-      value2 = evaluate(hand2)
+      IO.inspect(list, charlists: :as_lists)
+      IO.inspect(data1, charlists: :as_lists)
+      IO.inspect(data2, charlists: :as_lists)
+      value = evaluate(data1, data2)
+      # nil
     else
       IO.puts("Not enough cards")
     end
@@ -108,6 +110,7 @@ defmodule Poker do
 
   def getSuitPair(value) do
     suit = getSuit(value)
+
     cond do
       suit == "clubs" -> [clubs: getCard(value)]
       suit == "diamonds" -> [diamonds: getCard(value)]
@@ -118,88 +121,123 @@ defmodule Poker do
 
   def getCardPair(value) do
     card = getCard(value)
+
     cond do
-      card == 1 -> ['1': getSuit(value)]
-      card == 2 -> ['2': getSuit(value)]
-      card == 3 -> ['3': getSuit(value)]
-      card == 4 -> ['4': getSuit(value)]
-      card == 5 -> ['5': getSuit(value)]
-      card == 6 -> ['6': getSuit(value)]
-      card == 7 -> ['7': getSuit(value)]
-      card == 8 -> ['8': getSuit(value)]
-      card == 9 -> ['9': getSuit(value)]
-      card == 10 -> ['10': getSuit(value)]
-      card == 11 -> ['11': getSuit(value)]
-      card == 12 -> ['12': getSuit(value)]
-      card == 13 -> ['13': getSuit(value)]
+      card == 1 -> ["1": getSuit(value)]
+      card == 2 -> ["2": getSuit(value)]
+      card == 3 -> ["3": getSuit(value)]
+      card == 4 -> ["4": getSuit(value)]
+      card == 5 -> ["5": getSuit(value)]
+      card == 6 -> ["6": getSuit(value)]
+      card == 7 -> ["7": getSuit(value)]
+      card == 8 -> ["8": getSuit(value)]
+      card == 9 -> ["9": getSuit(value)]
+      card == 10 -> ["10": getSuit(value)]
+      card == 11 -> ["11": getSuit(value)]
+      card == 12 -> ["12": getSuit(value)]
+      card == 13 -> ["13": getSuit(value)]
     end
   end
 
   # ******************************************
 
-  def evaluate(hand) do
+  # Here is an assignment example that clearly indicates how to tie-break using the suit of the card. Suppose we have the following hands:
+
+  # HandA: Ace of spades, Queen of hearts, 9 of spades, 4 of spades, 2 of diamonds
+  # HandB: Ace of diamonds , Queen of clubs, 9 of hearts, 4 of hearts, 2 of hearts
+
+  # Both of these hands are the "High Card" hand type, with Ace being the high card for both.
+  # Because they have the same high card, we check the second highest. If the second highest is the same, we check third highest, and so on.
+  # In the above hands, all the card ranks are the same (Ace, Queen, 9, 4, 2). Thus, we move on to tie-breaking by suit.
+  # Spades is considered a higher suit than diamonds, so the Ace of spades will beat the Ace of diamonds. Thus, HandA is the winner.
+
+  # *** We only tie-break using suit when it is impossible to tie-break using rank ***
+
+  # If we change the hands slightly to the following:
+
+  # HandA: Ace of spades, Queen of hearts, 9 of spades, 4 of spades, 2 of diamonds
+  # HandB: Ace of diamonds , Queen of clubs, 9 of hearts, 4 of hearts, 3 of hearts
+
+  # HandB now beats HandA based on rank, because the 5th highest card is a 3 of hearts, which beats the 2 of diamonds in HandA.
+
+  def evaluate(data1, data2) do
     value = [
-      highCard: highCard(hand),
-      pair: pair(hand),
-      twoPair: twoPair(hand),
-      triplet: triplet(hand),
-      straight: straight(hand),
-      flush: flush(hand),
-      fullHouse: fullHouse(hand),
-      quadruplet: quadruplet(hand),
-      straightFlush: straightFlush(hand),
-      royalFlush: royalFlush(hand)
+      highCard: highCard(data1, data2),
+      pair: pair(data1, data2),
+      twoPair: twoPair(data1, data2),
+      triplet: triplet(data1, data2),
+      straight: straight(data1, data2),
+      flush: flush(data1, data2),
+      fullHouse: fullHouse(data1, data2),
+      quadruplet: quadruplet(data1, data2),
+      straightFlush: straightFlush(data1, data2),
+      royalFlush: royalFlush(data1, data2)
     ]
   end
 
   # ******************************************
 
-  def highCard(hand) do
-    true
+  def highCard(data1, data2) do
+    {value1, suit1} = highCard(data1[:raw], 0, "")
+    {value2, suit2} = highCard(data2[:raw], 0, "")
+  end
+
+  def highCard([], cardValue, suit), do: {getCard(cardValue), getSuit(cardValue)}
+
+  def highCard(hand, cardValue, suit) do
+    if (hd(hand) > cardValue) do
+      highCard(tl(hand), hd(hand), suit)
+    else
+      highCard(tl(hand), cardValue, suit)
+    end
   end
 
   # ******************************************
 
-  def pair(hand) do
+  def pair(data1, data2) do
+    # iex(1)> Keyword.take([clubs: 3, clubs: 10, diamonds: 3, spades: 4, spades: 8], [:spades])
+    # [spades: 4, spades: 8]
+    # iex(2)> length(Keyword.take([clubs: 3, clubs: 10, diamonds: 3, spades: 4, spades: 8], [:spades]))
+    # 2
   end
 
   # ******************************************
 
-  def twoPair(hand) do
+  def twoPair(data1, data2) do
   end
 
   # ******************************************
 
-  def triplet(hand) do
+  def triplet(data1, data2) do
   end
 
   # ******************************************
 
-  def straight(hand) do
+  def straight(data1, data2) do
   end
 
   # ******************************************
   # Keyword.take(keywords, keys)
-  def flush(hand) do
+  def flush(data1, data2) do
   end
 
   # ******************************************
 
-  def fullHouse(hand) do
+  def fullHouse(data1, data2) do
   end
 
   # ******************************************
 
-  def quadruplet(hand) do
+  def quadruplet(data1, data2) do
   end
 
   # ******************************************
 
-  def straightFlush(hand) do
+  def straightFlush(data1, data2) do
   end
 
   # ******************************************
 
-  def royalFlush(hand) do
+  def royalFlush(data1, data2) do
   end
 end
