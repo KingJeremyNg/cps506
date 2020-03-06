@@ -35,10 +35,10 @@ defmodule Poker do
         cardKeys: cardKeys2
       ]
 
-      # IO.inspect(list, charlists: :as_lists)
-      # IO.inspect(data1, charlists: :as_lists)
-      # IO.inspect(data2, charlists: :as_lists)
-      value = evaluate(data1, data2)
+      IO.inspect(list, charlists: :as_lists)
+      IO.inspect(data1, charlists: :as_lists)
+      IO.inspect(data2, charlists: :as_lists)
+      evaluation = evaluate(data1, data2)
       # nil
     else
       IO.puts("Not enough cards")
@@ -162,7 +162,7 @@ defmodule Poker do
 
   def evaluate(data1, data2) do
     value = [
-      highCard: highCard(data1, data2, 999, 0),
+      highCard: highCard(data1, data2),
       pair: pair(data1, data2),
       twoPair: twoPair(data1, data2),
       triplet: triplet(data1, data2),
@@ -177,49 +177,61 @@ defmodule Poker do
 
   # ******************************************
 
-  def highCard(data1, data2, max, count) do
-    {value1, suit1, max1} = getHighCard(data1[:raw], max, 0)
-    {value2, suit2, max2} = getHighCard(data2[:raw], max, 0)
+  def highCard(data1, data2) do
+    {value1, suit1} = getHighCard(data1[:raw], 0, 0)
+    {value2, suit2} = getHighCard(data2[:raw], 0, 0)
 
     cond do
-      data1[:hand] === data2[:hand] && count > 5 -> "TIE"
-      value1 == value2 -> highCard(data1, data2, max(max1, max2), count + 1)
-      value1 > value2 -> [data1[:hand], "hand1"]
-      value1 < value2 -> [data2[:hand], "hand2"]
+      value1 == 99 && value1 > value2 -> [hand1: 1, hand2: value2, winner: "hand1"]
+      value2 == 99 && value1 < value2 -> [hand1: value1, hand2: 1, winner: "hand1"]
+      value1 > value2 -> [hand1: value1, hand2: value2, winner: "hand1"]
+      value1 < value2 -> [hand1: value1, hand2: value2, winner: "hand2"]
+      value1 == value2 -> [hand1: value1, hand2: value2, winner: "tie"]
     end
   end
 
-  def getHighCard([], max, target) do
+  def getHighCard([], target, rawValue) do
     cond do
-      getCard(target) == 1 -> {14, getSuit(target), max}
-      true -> {getCard(target), getSuit(target), max}
+      target == 99 -> {99, getSuit(rawValue)}
+      true -> {getCard(rawValue), getSuit(rawValue)}
     end
   end
 
-  def getHighCard(hand, max, target) do
+  def getHighCard(hand, target, rawValue) do
     card = getCard(hd(hand))
 
     cond do
-      card == 1 && max > 14 -> getHighCard(tl(hand), max, 14)
-      card > target && card < max -> getHighCard(tl(hand), max, hd(hand))
-      card < target && card < max -> getHighCard(tl(hand), max, target)
-      true -> getHighCard(tl(hand), max, target)
+      card == 1 -> getHighCard(tl(hand), 99, getCard(hd(hand)))
+      card > target -> getHighCard(tl(hand), card, getCard(hd(hand)))
+      card < target -> getHighCard(tl(hand), target, rawValue)
+      true -> getHighCard(tl(hand), target, rawValue)
     end
   end
+  # def getHighCard([], target) do
+  #   cond do
+  #     target == 99 -> {99, getSuit(target)}
+  #     true -> {getCard(target), getSuit(target)}
+  #   end
+  # end
+
+  # def getHighCard(hand, target) do
+  #   card = getCard(hd(hand))
+  #   targetCard = getCard(target)
+
+  #   cond do
+  #     card == 1 -> getHighCard(tl(hand), 99)
+  #     card > targetCard -> getHighCard(tl(hand), hd(hand))
+  #     card < targetCard -> getHighCard(tl(hand), target)
+  #     true -> getHighCard(tl(hand), target)
+  #   end
+  # end
 
   # ******************************************
-
+  # iex(1)> Keyword.take([clubs: 3, clubs: 10, diamonds: 3, spades: 4, spades: 8], [:spades])
+  # [spades: 4, spades: 8]
+  # iex(2)> length(Keyword.take([clubs: 3, clubs: 10, diamonds: 3, spades: 4, spades: 8], [:spades]))
+  # 2
   def pair(data1, data2) do
-    # iex(1)> Keyword.take([clubs: 3, clubs: 10, diamonds: 3, spades: 4, spades: 8], [:spades])
-    # [spades: 4, spades: 8]
-    # iex(2)> length(Keyword.take([clubs: 3, clubs: 10, diamonds: 3, spades: 4, spades: 8], [:spades]))
-    # 2
-    hand1 = data1[:hand]
-    hand2 = data2[:hand]
-
-    cond do
-      Keyword.take(hand1)
-    end
   end
 
   # ******************************************
