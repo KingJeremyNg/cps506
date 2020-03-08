@@ -35,11 +35,13 @@ defmodule Poker do
         cardKeys: cardKeys2
       ]
 
+      evaluation = evaluate(data1, data2)
+
       IO.inspect(list, charlists: :as_lists)
       IO.inspect(data1, charlists: :as_lists)
       IO.inspect(data2, charlists: :as_lists)
-      evaluation = evaluate(data1, data2)
-      # nil
+      IO.inspect(evaluation, charlists: :as_lists)
+      nil
     else
       IO.puts("Not enough cards")
     end
@@ -207,36 +209,40 @@ defmodule Poker do
       true -> getHighCard(tl(hand), target, rawValue)
     end
   end
-  # def getHighCard([], target) do
-  #   cond do
-  #     target == 99 -> {99, getSuit(target)}
-  #     true -> {getCard(target), getSuit(target)}
-  #   end
-  # end
-
-  # def getHighCard(hand, target) do
-  #   card = getCard(hd(hand))
-  #   targetCard = getCard(target)
-
-  #   cond do
-  #     card == 1 -> getHighCard(tl(hand), 99)
-  #     card > targetCard -> getHighCard(tl(hand), hd(hand))
-  #     card < targetCard -> getHighCard(tl(hand), target)
-  #     true -> getHighCard(tl(hand), target)
-  #   end
-  # end
 
   # ******************************************
-  # iex(1)> Keyword.take([clubs: 3, clubs: 10, diamonds: 3, spades: 4, spades: 8], [:spades])
-  # [spades: 4, spades: 8]
-  # iex(2)> length(Keyword.take([clubs: 3, clubs: 10, diamonds: 3, spades: 4, spades: 8], [:spades]))
-  # 2
+
   def pair(data1, data2) do
+    pair1 = data1[:hand] -- Enum.dedup(Enum.sort(data1[:hand]))
+    pair2 = data2[:hand] -- Enum.dedup(Enum.sort(data2[:hand]))
+
+    highestPair1 = Enum.at(pair1, -1)
+    highestPair2 = Enum.at(pair2, -1)
+
+    cond do
+      pair1 == [] && pair2 == [] -> [hand1: pair1, hand2: pair2, winner: "tie"]
+      pair1 === pair2 -> [hand1: pair1, hand2: pair2, winner: "tie"]
+      pair1 != [] && pair2 == [] -> [hand1: pair1, hand2: pair2, winner: "hand1"]
+      pair1 == [] && pair2 != [] -> [hand1: pair1, hand2: pair2, winner: "hand2"]
+      highestPair1 == 1 && highestPair2 != 1 -> [hand1: pair1, hand2: pair2, winner: "hand1"]
+      highestPair1 != 1 && highestPair2 == 1 -> [hand1: pair1, hand2: pair2, winner: "hand2"]
+      highestPair1 > highestPair2 -> [hand1: pair1, hand2: pair2, winner: "hand1"]
+      highestPair1 < highestPair2 -> [hand1: pair1, hand2: pair2, winner: "hand2"]
+    end
   end
 
   # ******************************************
 
   def twoPair(data1, data2) do
+    pair1 = data1[:hand] -- Enum.dedup(Enum.sort(data1[:hand]))
+    pair2 = data2[:hand] -- Enum.dedup(Enum.sort(data2[:hand]))
+
+    highestPair1 = Enum.at(pair1, -1)
+    highestPair2 = Enum.at(pair2, -1)
+
+    cond do
+      pair1 == [] && pair2 == [] -> [hand1: pair1, hand2: pair2, winner: "tie"]
+    end
   end
 
   # ******************************************
