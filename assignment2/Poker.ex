@@ -237,18 +237,48 @@ defmodule Poker do
     pair1 = data1[:hand] -- Enum.dedup(Enum.sort(data1[:hand]))
     pair2 = data2[:hand] -- Enum.dedup(Enum.sort(data2[:hand]))
 
+    lowestPair1 = Enum.at(pair1, 0)
+    lowestPair2 = Enum.at(pair2, 0)
     highestPair1 = Enum.at(pair1, -1)
     highestPair2 = Enum.at(pair2, -1)
 
+    check1 = checkPair(lowestPair1, highestPair1)
+    check2 = checkPair(lowestPair2, highestPair2)
+
     cond do
       pair1 == [] && pair2 == [] -> [hand1: pair1, hand2: pair2, winner: "tie"]
+      pair1 === pair2 -> [hand1: pair1, hand2: pair2, winner: "tie"]
+      check1 == false && check2 == false -> [hand1: pair1, hand2: pair2, winner: "tie"]
+      check1 == true && check2 == false -> [hand1: pair1, hand2: pair2, winner: "hand1"]
+      check1 == false && check2 == true -> [hand1: pair1, hand2: pair2, winner: "hand2"]
+      check1 == true && check2 == true && lowestPair1 == 1 && lowestPair2 != 1 -> [hand1: pair1, hand2: pair2, winner: "hand1"]
+      check1 == true && check2 == true && lowestPair1 != 1 && lowestPair2 == 1 -> [hand1: pair1, hand2: pair2, winner: "hand2"]
+      check1 == true && check2 == false -> [hand1: pair1, hand2: pair2, winner: "hand1"]
+      check1 == false && check2 == true -> [hand1: pair1, hand2: pair2, winner: "hand2"]
+      check1 == true && check2 == true && highestPair1 > highestPair2 -> [hand1: pair1, hand2: pair2, winner: "hand1"]
+      check1 == true && check2 == true && highestPair1 < highestPair2 -> [hand1: pair1, hand2: pair2, winner: "hand2"]
+    end
+  end
+
+  def checkPair(lowestPair, highestPair) do
+    if (lowestPair == highestPair) do
+      false
+    else
+      true
     end
   end
 
   # ******************************************
 
   def triplet(data1, data2) do
+    duplicates1 = data1[:hand] -- Enum.dedup(Enum.sort(data1[:hand]))
+    duplicates2 = data2[:hand] -- Enum.dedup(Enum.sort(data2[:hand]))
+
+    check1 = checkTriplets(duplicates1)
+    check1 = checkTriplets(duplicates2)
   end
+
+  def checkTriplet(duplicates)
 
   # ******************************************
 
