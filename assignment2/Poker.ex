@@ -35,12 +35,13 @@ defmodule Poker do
         cardKeys: cardKeys2
       ]
 
-      IO.inspect(list, charlists: :as_lists)
-      IO.inspect(data1, charlists: :as_lists)
-      IO.inspect(data2, charlists: :as_lists)
       evaluation = evaluate(data1, data2)
-      IO.inspect(evaluation, charlists: :as_lists)
-      nil
+      winner = getWinner(evaluation)
+
+      cond do
+        winner == "hand1" -> displayWinner(data1[:raw], [])
+        winner == "hand2" -> displayWinner(data2[:raw], [])
+      end
     else
       IO.puts("Not enough cards")
     end
@@ -51,7 +52,7 @@ defmodule Poker do
   def shuffle(), do: shuffle(Enum.to_list(1..52))
 
   def shuffle(list) do
-    list = Enum.shuffle(list)
+    Enum.shuffle(list)
   end
 
   # ******************************************
@@ -142,45 +143,68 @@ defmodule Poker do
 
   # ******************************************
 
-  # Here is an assignment example that clearly indicates how to tie-break using the suit of the card. Suppose we have the following hands:
-
-  # HandA: Ace of spades, Queen of hearts, 9 of spades, 4 of spades, 2 of diamonds
-  # HandB: Ace of diamonds , Queen of clubs, 9 of hearts, 4 of hearts, 2 of hearts
-
-  # Both of these hands are the "High Card" hand type, with Ace being the high card for both.
-  # Because they have the same high card, we check the second highest. If the second highest is the same, we check third highest, and so on.
-  # In the above hands, all the card ranks are the same (Ace, Queen, 9, 4, 2). Thus, we move on to tie-breaking by suit.
-  # Spades is considered a higher suit than diamonds, so the Ace of spades will beat the Ace of diamonds. Thus, HandA is the winner.
-
-  # *** We only tie-break using suit when it is impossible to tie-break using rank ***
-
-  # If we change the hands slightly to the following:
-
-  # HandA: Ace of spades, Queen of hearts, 9 of spades, 4 of spades, 2 of diamonds
-  # HandB: Ace of diamonds , Queen of clubs, 9 of hearts, 4 of hearts, 3 of hearts
-
-  # HandB now beats HandA based on rank, because the 5th highest card is a 3 of hearts, which beats the 2 of diamonds in HandA.
-
   def evaluate(data1, data2) do
     value = [
-      highCard: highCard(data1, data2),
-      pair: pair(data1, data2),
-      twoPair: twoPair(data1, data2),
-      triplet: triplet(data1, data2),
-      straight: straight(data1, data2),
-      flush: flush(data1, data2),
-      fullHouse: fullHouse(data1, data2),
+      # royalFlush: royalFlush(data1, data2)
+      # straightFlush: straightFlush(data1, data2),
       quadruplet: quadruplet(data1, data2),
-      straightFlush: straightFlush(data1, data2),
-      royalFlush: royalFlush(data1, data2)
+      # fullHouse: fullHouse(data1, data2),
+      flush: flush(data1, data2),
+      straight: straight(data1, data2),
+      triplet: triplet(data1, data2),
+      twoPair: twoPair(data1, data2),
+      pair: pair(data1, data2),
+      highCard: highCard(data1, data2)
     ]
+
+    value = List.insert_at(value, 1, {:fullHouse, fullHouse(value)})
+    value = List.insert_at(value, 0, {:straightFlush, straightFlush(value)})
+    value = List.insert_at(value, 0, {:royalFlush, royalFlush(data1, data2, value)})
+  end
+
+
+  def getWinner(evaluation) do
+    cond do
+      evaluation[:royalFlush][:winner] == "hand1" -> "hand1"
+      evaluation[:royalFlush][:winner] == "hand2" -> "hand2"
+      evaluation[:straightFlush][:winner] == "hand1" -> "hand1"
+      evaluation[:straightFlush][:winner] == "hand2" -> "hand2"
+      evaluation[:quadruplet][:winner] == "hand1" -> "hand1"
+      evaluation[:quadruplet][:winner] == "hand2" -> "hand2"
+      evaluation[:fullHouse][:winner] == "hand1" -> "hand1"
+      evaluation[:fullHouse][:winner] == "hand2" -> "hand2"
+      evaluation[:flush][:winner] == "hand1" -> "hand1"
+      evaluation[:flush][:winner] == "hand2" -> "hand2"
+      evaluation[:straight][:winner] == "hand1" -> "hand1"
+      evaluation[:straight][:winner] == "hand2" -> "hand2"
+      evaluation[:triplet][:winner] == "hand1" -> "hand1"
+      evaluation[:triplet][:winner] == "hand2" -> "hand2"
+      evaluation[:twoPair][:winner] == "hand1" -> "hand1"
+      evaluation[:twoPair][:winner] == "hand2" -> "hand2"
+      evaluation[:pair][:winner] == "hand1" -> "hand1"
+      evaluation[:pair][:winner] == "hand2" -> "hand2"
+      evaluation[:highCard][:winner] == "hand1" -> "hand1"
+      evaluation[:highCard][:winner] == "hand2" -> "hand2"
+      evaluation[:highCard][:winner] == "tie" -> "tie"
+    end
+  end
+
+  def displayWinner([], list), do: Enum.sort(list)
+
+  def displayWinner(hand, list) do
+    card = getCard(hd(hand))
+    suit = getSuit(hd(hand))
+
+    list = list ++ [Integer.to_string(card) <> String.capitalize(String.at(suit, 0))]
+
+    displayWinner(tl(hand), list)
   end
 
   # ******************************************
 
   def highCard(data1, data2) do
-    {value1, suit1} = getHighCard(Enum.sort(data1[:raw]), 0, 0)
-    {value2, suit2} = getHighCard(Enum.sort(data2[:raw]), 0, 0)
+    {value1} = getHighCard(Enum.sort(data1[:raw]), 0, 0)
+    {value2} = getHighCard(Enum.sort(data2[:raw]), 0, 0)
 
     cond do
       value1 == 99 && value2 == 99 -> [hand1: 1, hand2: 1, winner: "tie"]
@@ -194,8 +218,8 @@ defmodule Poker do
 
   def getHighCard([], target, rawValue) do
     cond do
-      target == 99 -> {99, getSuit(rawValue)}
-      true -> {getCard(rawValue), getSuit(rawValue)}
+      target == 99 -> {99}
+      true -> {getCard(rawValue)}
     end
   end
 
@@ -220,14 +244,14 @@ defmodule Poker do
     highestPair2 = Enum.at(pair2, -1)
 
     cond do
-      pair1 == [] && pair2 == [] -> [hand1: pair1, hand2: pair2, winner: "tie"]
-      pair1 === pair2 -> [hand1: pair1, hand2: pair2, winner: "tie"]
-      pair1 != [] && pair2 == [] -> [hand1: pair1, hand2: pair2, winner: "hand1"]
-      pair1 == [] && pair2 != [] -> [hand1: pair1, hand2: pair2, winner: "hand2"]
-      highestPair1 == 1 && highestPair2 != 1 -> [hand1: pair1, hand2: pair2, winner: "hand1"]
-      highestPair1 != 1 && highestPair2 == 1 -> [hand1: pair1, hand2: pair2, winner: "hand2"]
-      highestPair1 > highestPair2 -> [hand1: pair1, hand2: pair2, winner: "hand1"]
-      highestPair1 < highestPair2 -> [hand1: pair1, hand2: pair2, winner: "hand2"]
+      pair1 == [] && pair2 == [] -> [hand1: false, hand2: false, winner: "tie"]
+      pair1 === pair2 -> [hand1: true, hand2: true, winner: "tie"]
+      pair1 != [] && pair2 == [] -> [hand1: true, hand2: false, winner: "hand1"]
+      pair1 == [] && pair2 != [] -> [hand1: false, hand2: true, winner: "hand2"]
+      highestPair1 == 1 && highestPair2 != 1 -> [hand1: true, hand2: true, winner: "hand1"]
+      highestPair1 != 1 && highestPair2 == 1 -> [hand1: true, hand2: true, winner: "hand2"]
+      highestPair1 > highestPair2 -> [hand1: true, hand2: true, winner: "hand1"]
+      highestPair1 < highestPair2 -> [hand1: true, hand2: true, winner: "hand2"]
     end
   end
 
@@ -247,37 +271,37 @@ defmodule Poker do
 
     cond do
       pair1 == [] && pair2 == [] ->
-        [hand1: pair1, hand2: pair2, winner: "tie"]
+        [hand1: false, hand2: false, winner: "tie"]
 
       pair1 === pair2 ->
-        [hand1: pair1, hand2: pair2, winner: "tie"]
+        [hand1: true, hand2: true, winner: "tie"]
 
-      check1 == false && check2 == false ->
-        [hand1: pair1, hand2: pair2, winner: "tie"]
+      check1 == false && check1 == false ->
+        [hand1: check1, hand2: check1, winner: "tie"]
 
       check1 == true && check2 == false ->
-        [hand1: pair1, hand2: pair2, winner: "hand1"]
+        [hand1: check1, hand2: check1, winner: "hand1"]
 
       check1 == false && check2 == true ->
-        [hand1: pair1, hand2: pair2, winner: "hand2"]
+        [hand1: check1, hand2: check1, winner: "hand2"]
 
       check1 == true && check2 == true && lowestPair1 == 1 && lowestPair2 != 1 ->
-        [hand1: pair1, hand2: pair2, winner: "hand1"]
+        [hand1: check1, hand2: check1, winner: "hand1"]
 
       check1 == true && check2 == true && lowestPair1 != 1 && lowestPair2 == 1 ->
-        [hand1: pair1, hand2: pair2, winner: "hand2"]
+        [hand1: check1, hand2: check1, winner: "hand2"]
 
       check1 == true && check2 == false ->
-        [hand1: pair1, hand2: pair2, winner: "hand1"]
+        [hand1: check1, hand2: check1, winner: "hand1"]
 
       check1 == false && check2 == true ->
-        [hand1: pair1, hand2: pair2, winner: "hand2"]
+        [hand1: check1, hand2: check1, winner: "hand2"]
 
       check1 == true && check2 == true && highestPair1 > highestPair2 ->
-        [hand1: pair1, hand2: pair2, winner: "hand1"]
+        [hand1: check1, hand2: check1, winner: "hand1"]
 
       check1 == true && check2 == true && highestPair1 < highestPair2 ->
-        [hand1: pair1, hand2: pair2, winner: "hand2"]
+        [hand1: check1, hand2: check1, winner: "hand2"]
     end
   end
 
@@ -298,20 +322,40 @@ defmodule Poker do
     triplet1 = duplicates1 -- Enum.dedup(duplicates1)
     triplet2 = duplicates2 -- Enum.dedup(duplicates2)
 
-    if triplet1 != [] && triplet2 != [] do
-      cond do
-        hd(triplet1) == 1 -> [hand1: triplet1, hand2: triplet2, winner: "hand1"]
-        hd(triplet2) == 1 -> [hand1: triplet1, hand2: triplet2, winner: "hand2"]
-        triplet1 > triplet2 -> [hand1: triplet1, hand2: triplet2, winner: "hand1"]
-        triplet1 < triplet2 -> [hand1: triplet1, hand2: triplet2, winner: "hand2"]
-        true -> [hand1: triplet1, hand2: triplet2, winner: "tie"]
-      end
-    else
-      [hand1: [], hand2: [], winner: "tie"]
+    {check1, value1} = checkTriplet(triplet1)
+    {check2, value2} = checkTriplet(triplet2)
+
+    cond do
+      check1 == true && value1 == 1 ->
+        [hand1: check1, hand2: check2, winner: "hand1"]
+
+      check2 == true && value2 == 1 ->
+        [hand1: check1, hand2: check2, winner: "hand2"]
+
+      check1 == true && check2 == true && value1 > value2 ->
+        [hand1: check1, hand2: check2, winner: "hand1"]
+
+      check1 == true && check2 == true && value1 < value2 ->
+        [hand1: check1, hand2: check2, winner: "hand2"]
+
+      check1 == true && check2 == false ->
+        [hand1: check1, hand2: check2, winner: "hand1"]
+
+      check1 == false && check2 == true ->
+        [hand1: check1, hand2: check2, winner: "hand2"]
+
+      check1 == false && check2 == false ->
+        [hand1: check1, hand2: check2, winner: "tie"]
     end
   end
 
-  def checkTriplet(duplicates), do: duplicates -- Enum.dedup(duplicates)
+  def checkTriplet(list) do
+    if list == [] do
+      {false, 0}
+    else
+      {true, hd(list)}
+    end
+  end
 
   # ******************************************
 
@@ -320,8 +364,14 @@ defmodule Poker do
     {straight2, highCard2} = checkStraight(hd(data2[:hand]), tl(data2[:hand]))
 
     cond do
-      straight1 == true && straight2 == true ->
+      straight1 == true && straight2 == true && highCard1 == highCard2 ->
         [hand1: straight1, hand2: straight2, winner: "tie"]
+
+      straight1 == true && straight2 == true && highCard1 > highCard2 ->
+        [hand1: straight1, hand2: straight2, winner: "hand1"]
+
+      straight1 == true && straight2 == true && highCard1 < highCard2 ->
+        [hand1: straight1, hand2: straight2, winner: "hand2"]
 
       straight1 == true && straight2 == false ->
         [hand1: straight1, hand2: straight2, winner: "hand1"]
@@ -351,12 +401,23 @@ defmodule Poker do
     {check2, suit2} = checkFlush(hd(data2[:suit]), tl(data2[:suit]))
 
     cond do
-      check1 == true && check2 == true && suit1 > suit2 -> [hand1: check1, hand2: check2, winner: "hand1"]
-      check1 == true && check2 == true && suit1 < suit2 -> [hand1: check1, hand2: check2, winner: "hand2"]
-      check1 == true && check2 == true && suit1 == suit2 -> [hand1: check1, hand2: check2, winner: "tie"]
-      check1 == true && check2 == false -> [hand1: check1, hand2: check2, winner: "hand1"]
-      check1 == false && check2 == true -> [hand1: check1, hand2: check2, winner: "hand2"]
-      check1 == false && check2 == false -> [hand1: check1, hand2: check2, winner: "tie"]
+      check1 == true && check2 == true && suit1 > suit2 ->
+        [hand1: check1, hand2: check2, winner: "hand1"]
+
+      check1 == true && check2 == true && suit1 < suit2 ->
+        [hand1: check1, hand2: check2, winner: "hand2"]
+
+      check1 == true && check2 == true && suit1 == suit2 ->
+        [hand1: check1, hand2: check2, winner: "tie"]
+
+      check1 == true && check2 == false ->
+        [hand1: check1, hand2: check2, winner: "hand1"]
+
+      check1 == false && check2 == true ->
+        [hand1: check1, hand2: check2, winner: "hand2"]
+
+      check1 == false && check2 == false ->
+        [hand1: check1, hand2: check2, winner: "tie"]
     end
   end
 
@@ -379,21 +440,136 @@ defmodule Poker do
 
   # ******************************************
 
-  def fullHouse(data1, data2) do
+  def fullHouse(evaluation) do
+    fullHouse1 = evaluation[:triplet][:hand1] && evaluation[:pair][:hand1]
+    fullHouse2 = evaluation[:triplet][:hand2] && evaluation[:pair][:hand1]
+
+    tripletWinner = evaluation[:triplet][:winner]
+
+    cond do
+      fullHouse1 == true && fullHouse2 == true && tripletWinner == "hand1" ->
+        [hand1: fullHouse1, hand2: fullHouse2, winner: "hand1"]
+
+      fullHouse1 == true && fullHouse2 == true && tripletWinner == "hand2" ->
+        [hand1: fullHouse1, hand2: fullHouse2, winner: "hand2"]
+
+      fullHouse1 == true && fullHouse2 == true && tripletWinner == "tie" ->
+        [hand1: fullHouse1, hand2: fullHouse2, winner: "tie"]
+
+      fullHouse1 == true && fullHouse2 == false ->
+        [hand1: fullHouse1, hand2: fullHouse2, winner: "hand1"]
+
+      fullHouse1 == false && fullHouse2 == true ->
+        [hand1: fullHouse1, hand2: fullHouse2, winner: "hand2"]
+
+      fullHouse1 == false && fullHouse2 == false ->
+        [hand1: fullHouse1, hand2: fullHouse2, winner: "tie"]
+    end
   end
 
   # ******************************************
 
   def quadruplet(data1, data2) do
+    duplicates1 = data1[:hand] -- Enum.dedup(Enum.sort(data1[:hand]))
+    duplicates2 = data2[:hand] -- Enum.dedup(Enum.sort(data2[:hand]))
+
+    triplet1 = duplicates1 -- Enum.dedup(duplicates1)
+    triplet2 = duplicates2 -- Enum.dedup(duplicates2)
+
+    quadruplet1 = triplet1 -- Enum.dedup(triplet1)
+    quadruplet2 = triplet2 -- Enum.dedup(triplet2)
+
+    {check1, value1} = checkQuadruplet(quadruplet1)
+    {check2, value2} = checkQuadruplet(quadruplet2)
+
+    cond do
+      check1 == true && value1 == 1 ->
+        [hand1: check1, hand2: check2, winner: "hand1"]
+
+      check2 == true && value2 == 1 ->
+        [hand1: check1, hand2: check2, winner: "hand2"]
+
+      check1 == true && check2 == true && value1 > value2 ->
+        [hand1: check1, hand2: check2, winner: "hand1"]
+
+      check1 == true && check2 == true && value1 < value2 ->
+        [hand1: check1, hand2: check2, winner: "hand2"]
+
+      check1 == true && check2 == false ->
+        [hand1: check1, hand2: check2, winner: "hand1"]
+
+      check1 == false && check2 == true ->
+        [hand1: check1, hand2: check2, winner: "hand2"]
+
+      check1 == false && check2 == false ->
+        [hand1: check1, hand2: check2, winner: "tie"]
+    end
+  end
+
+  def checkQuadruplet(list) do
+    if list == [] do
+      {false, 0}
+    else
+      {true, hd(list)}
+    end
   end
 
   # ******************************************
 
-  def straightFlush(data1, data2) do
+  def straightFlush(evaluation) do
+    straightFlush1 = evaluation[:straight][:hand1] && evaluation[:flush][:hand1]
+    straightFlush2 = evaluation[:straight][:hand2] && evaluation[:flush][:hand2]
+
+    # straightWinner = evaluation[:straight][:winner]
+    flushWinner = evaluation[:flush][:winner]
+
+    cond do
+      straightFlush1 == true && straightFlush2 == true && flushWinner == "hand1" ->
+        [hand1: straightFlush1, hand2: straightFlush2, winner: "hand1"]
+
+        straightFlush1 == true && straightFlush2 == true && flushWinner == "hand2" ->
+        [hand1: straightFlush1, hand2: straightFlush2, winner: "hand2"]
+
+      straightFlush1 == true && straightFlush2 == true && flushWinner == "tie" ->
+        [hand1: straightFlush1, hand2: straightFlush2, winner: "tie"]
+
+      straightFlush1 == true && straightFlush2 == false ->
+        [hand1: straightFlush1, hand2: straightFlush2, winner: "hand1"]
+
+      straightFlush1 == false && straightFlush2 == true ->
+        [hand1: straightFlush1, hand2: straightFlush2, winner: "hand2"]
+
+      straightFlush1 == false && straightFlush2 == false ->
+        [hand1: straightFlush1, hand2: straightFlush2, winner: "tie"]
+    end
   end
 
   # ******************************************
 
-  def royalFlush(data1, data2) do
+  def royalFlush(data1, data2, evaluation) do
+    royalFlush1 = evaluation[:flush][:hand1] && (Enum.sort(data1[:hand]) == [1,10,11,12,13])
+    royalFlush2 = evaluation[:flush][:hand2] && (Enum.sort(data2[:hand]) == [1,10,11,12,13])
+
+    flushWinner = evaluation[:flush][:winner]
+
+    cond do
+      royalFlush1 == true && royalFlush2 == true && flushWinner == "hand1" ->
+        [hand1: royalFlush1, hand2: royalFlush2, winner: "hand1"]
+
+        royalFlush1 == true && royalFlush2 == true && flushWinner == "hand2" ->
+        [hand1: royalFlush1, hand2: royalFlush2, winner: "hand2"]
+
+      royalFlush1 == true && royalFlush2 == true && flushWinner == "tie" ->
+        [hand1: royalFlush1, hand2: royalFlush2, winner: "tie"]
+
+      royalFlush1 == true && royalFlush2 == false ->
+        [hand1: royalFlush1, hand2: royalFlush2, winner: "hand1"]
+
+      royalFlush1 == false && royalFlush2 == true ->
+        [hand1: royalFlush1, hand2: royalFlush2, winner: "hand2"]
+
+      royalFlush1 == false && royalFlush2 == false ->
+        [hand1: royalFlush1, hand2: royalFlush2, winner: "tie"]
+    end
   end
 end
