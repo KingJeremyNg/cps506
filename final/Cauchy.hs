@@ -21,8 +21,14 @@ module Cauchy where
         | (length list1) < (length list2) = zipWith (-) (extendList list1 (length list2)) list2
         | (length list1) > (length list2) = zipWith (-) list1 (extendList list2 (length list1))
     
-    multiplyList list1 list2 = [0]
-
+    multiplyList list1 list2
+        | (length list1) == (length list2) = multiplyListCalculate (tail list1) (tail list2) [head list1] [head list2] []
+        | otherwise = multiplyList (extendList list1 ((length list1) + (length list2))) (extendList list2 ((length list1) + (length list2)))
+    
+    multiplyListCalculate (x: xs) (y: ys) list1 list2 answer
+        | xs == [] && ys == [] = (answer ++ [(sum (zipWith (*) list1 (reverse list2)))])
+        | otherwise = multiplyListCalculate xs ys (list1 ++ [x]) (list2 ++ [y]) (answer ++ [(sum (zipWith (*) list1 (reverse list2)))])
+    
     -- ==
     instance Eq CauchyList where
         CauchyList num1 list1 == CauchyList num2 list2
@@ -39,10 +45,10 @@ module Cauchy where
 
         CauchyList num1 list1 * CauchyList num2 list2 =
             CauchyList num1 [x `mod` num1 | x <- multiplyList list1 list2]
-        -- CauchyList num list * fromInteger scalar = CauchyList num [x * scalar | x <- list]
-        -- abs CauchyList num1 list1
-        -- signum CauchyList num1 list1
-        -- -- Takes number turn into cauchy
+        
+        abs (CauchyList num list) = CauchyList num [abs x | x <- list]
+
+        signum (CauchyList num list) = CauchyList num [signum x | x <- list]
 
         fromInteger n = CauchyList (fromIntegral n) [fromIntegral n]
     
